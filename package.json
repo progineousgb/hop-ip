@@ -1,0 +1,41 @@
+{
+  "name": "hop-ip",
+  "version": "1.0.0",
+  "description": "Read the visitor IP from a proxy header and ignore addresses the client added.",
+  "license": "MIT",
+  "author": "Pro Gineous <github@progineous.com>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/progineousgb/hop-ip.git"
+  },
+  "homepage": "https://github.com/progineousgb/hop-ip",
+  "bugs": {
+    "url": "https://github.com/progineousgb/hop-ip/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && tsc -p tsconfig.test.json && node --test dist-test/test/client-ip.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3"
+  }
+}
