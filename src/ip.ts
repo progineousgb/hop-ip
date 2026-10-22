@@ -105,6 +105,30 @@ function parseRaw(input: string): { version: 4 | 6; bytes: Uint8Array } | null {
   return { version: 4, bytes };
 }
 
+/**
+ * Removes a port from a header token: "[addr]:port" becomes "addr" and
+ * "a.b.c.d:port" (one colon and a dot) becomes "a.b.c.d". Returns null when the
+ * port part is malformed.
+ */
+export function stripPort(input: string): string | null {
+  const text = input.trim();
+  if (text.startsWith("[")) {
+    const close = text.indexOf("]");
+    if (close < 0) return null;
+    const rest = text.slice(close + 1);
+    if (rest.length === 0) return text;
+    if (!/^:[0-9]{1,5}$/.test(rest) || Number(rest.slice(1)) > 65535) return null;
+    return text.slice(0, close + 1);
+  }
+  const first = text.indexOf(":");
+  if (first >= 0 && first === text.lastIndexOf(":") && text.includes(".")) {
+    const port = text.slice(first + 1);
+    if (!/^[0-9]{1,5}$/.test(port) || Number(port) > 65535) return null;
+    return text.slice(0, first);
+  }
+  return text;
+}
+
 export function parseNormalized(input: string): Addr | null {
   const raw = parseRaw(input);
   if (!raw) return null;
@@ -178,8 +202,12 @@ export function parseNetwork(entry: string): Network | null {
 
   const bits = prefix ?? 128;
   if (bits > 128) return null;
-  // An IPv6 trusted prefix shorter than 32 bits is ignored so it cannot treat every IPv4 address as a proxy.
-  if (bits < 32) return null;
+  // An IPv6 trusted prefix shorter than 32 bits is rejected so it cannot silently trust a huge range.
+  if (bits < 32) {
+    throw new RangeError(
+      `hop-ip: IPv6 trusted prefix "${trimmed}" is shorter than /32. Use a prefix of 32 bits or more.`,
+    );
+  }
 
   if (isV4Mapped(raw.bytes) && bits >= 96) {
     return {
