@@ -123,26 +123,13 @@ test("a bracketed IPv6 address is accepted", () => {
   );
 });
 
-test("a too-short IPv6 trusted prefix does not make an IPv4 client trusted", () => {
-  assert.equal(
-    clientIp({
-      peer: "10.0.0.8",
-      header: "for=198.51.100.7, for=203.0.113.10",
-      trusted: ["10.0.0.0/8", "::/0"],
-    }),
-    "203.0.113.10",
-  );
-});
-
-test("an IPv6 trusted prefix shorter than 32 is ignored", () => {
-  assert.equal(
-    clientIp({
-      peer: "2001:db8::8",
-      header: 'for="[2001:db8:1::5]"',
-      trusted: ["2001:db8::/16"],
-    }),
-    "2001:db8::8",
-  );
+test("an IPv6 trusted prefix shorter than 32 throws a clear error", () => {
+  for (const trusted of [["::/0"], ["10.0.0.0/8", "2001:db8::/16"], ["::/31"]]) {
+    assert.throws(
+      () => clientIp({ peer: "10.0.0.8", header: "for=203.0.113.10", trusted }),
+      (err: unknown) => err instanceof RangeError && /shorter than \/32/.test(err.message),
+    );
+  }
 });
 
 test("an IPv6 trusted prefix of 32 bits is kept", () => {
@@ -259,7 +246,7 @@ test("bad input does not throw", () => {
     clientIp({
       peer: "10.0.0.8",
       header: ";;;,,,",
-      trusted: ["::/0", "bogus", "10.0.0.0/99"],
+      trusted: ["bogus", "10.0.0.0/99"],
     });
     clientIp({
       peer: "",
